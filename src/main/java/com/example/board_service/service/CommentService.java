@@ -6,7 +6,11 @@ import com.example.board_service.dto.comment.CommentResponse;
 import com.example.board_service.dto.comment.CreateCommentRequest;
 import com.example.board_service.repository.CommentRepository;
 import com.example.board_service.repository.PostRepository;
+import com.example.board_service.user.User;
+import com.example.board_service.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +22,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class CommentService {
 
+    private final UserRepository userRepository;
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
 
@@ -29,10 +34,22 @@ public class CommentService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. id=" + postId));
 
+        // 🔥 JWT 에서 현재 로그인 유저 꺼내기
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        org.springframework.security.core.userdetails.User principal =
+                (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
+
+        String email = principal.getUsername();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("User not found: " + email));
+
         Comment comment = Comment.builder()
                 .post(post)
                 .parent(null)
-                .author(request.getAuthor())
+                .author(user.getNickname())          // 🔥 author = JWT 유저 닉네임
                 .content(request.getContent())
                 .build();
 
@@ -55,10 +72,22 @@ public class CommentService {
             throw new IllegalArgumentException("부모 댓글이 해당 게시글의 댓글이 아닙니다.");
         }
 
+        // 🔥 JWT 에서 현재 로그인 유저 꺼내기
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        org.springframework.security.core.userdetails.User principal =
+                (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
+
+        String email = principal.getUsername();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("User not found: " + email));
+
         Comment reply = Comment.builder()
                 .post(post)
                 .parent(parent)
-                .author(request.getAuthor())
+                .author(user.getNickname())          // 🔥 author = JWT 유저 닉네임
                 .content(request.getContent())
                 .build();
 
@@ -100,15 +129,12 @@ public class CommentService {
 
     /**
      * 댓글 삭제
-     * - 간단하게: 해당 댓글 + 자식 댓글 존재 시 DB FK 제약(ON DELETE CASCADE) 또는 별도 삭제 로직 필요
-     * - 지금은 "자식 먼저 삭제" 전략으로 간다.
      */
     @Transactional
     public void deleteComment(Long commentId) {
         Comment target = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("댓글이 존재하지 않습니다. id=" + commentId));
 
-        // 자식 댓글들 먼저 삭제 (심플하게: 같은 post에서 parent가 이 댓글인 것들)
         List<Comment> allComments = commentRepository.findByPostIdOrderByCreatedAtAsc(target.getPost().getId());
 
         List<Comment> children = allComments.stream()

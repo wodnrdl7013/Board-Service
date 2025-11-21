@@ -8,6 +8,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.security.Key;
 import java.util.Arrays;
@@ -20,6 +22,25 @@ public class JwtProvider {
 
     private final Key key;
     private final long accessTokenValidityMs;
+
+    public String getEmail(String token) {
+        Claims claims = parseClaims(token);
+        return claims.getSubject(); // email = subject
+    }
+
+    public String getRole(String token) {
+        Claims claims = parseClaims(token);
+        return claims.get("roles", String.class);
+    }
+
+    public String resolveToken(HttpServletRequest request) {
+        String bearer = request.getHeader("Authorization");
+        if (!StringUtils.hasText(bearer) || !bearer.startsWith("Bearer ")) {
+            return null;
+        }
+        return bearer.substring(7);
+    }
+
 
     public JwtProvider(
             @Value("${jwt.secret}") String secret,

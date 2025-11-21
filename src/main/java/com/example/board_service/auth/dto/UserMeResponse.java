@@ -1,15 +1,14 @@
 package com.example.board_service.auth.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 @Getter
-@AllArgsConstructor
+@Setter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class UserMeResponse {
-
-    private Long id;
+    private Long userId;
     private String email;
     private String nickname;
     private String roles;

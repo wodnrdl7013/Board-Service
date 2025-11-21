@@ -6,22 +6,17 @@ import jakarta.validation.constraints.Size;
 public class CreatePostRequest {
 
     @NotBlank
-    @Size(max = 200)
     private String title;
 
     @NotBlank
     private String content;
 
-    @NotBlank
-    @Size(max = 50)
-    private String author;
 
     public CreatePostRequest() {}
 
-    public CreatePostRequest(String title, String content, String author) {
+    public CreatePostRequest(String title, String content) {
         this.title = title;
         this.content = content;
-        this.author = author;
     }
 
     public String getTitle() {
@@ -30,9 +25,5 @@ public class CreatePostRequest {
 
     public String getContent() {
         return content;
-    }
-
-    public String getAuthor() {
-        return author;
     }
 }

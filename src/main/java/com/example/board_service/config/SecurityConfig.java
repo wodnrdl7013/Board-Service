@@ -20,44 +20,45 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
+    private final JsonAuthenticationEntryPoint jsonAuthenticationEntryPoint;
+    private final JsonAccessDeniedHandler jsonAccessDeniedHandler;
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-    @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtProvider);
-    }
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
-        // CSRF 비활성화 (REST API + JWT)
+        // CSRF 비활성화 (JWT 사용)
         http.csrf(AbstractHttpConfigurer::disable);
 
-        // 세션 사용 안 함 (STATELESS)
+        // 세션 사용 X
         http.sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         );
 
-        // URL별 권한 설정
+        // 인가 설정
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                        "/auth/**",
-                        "/swagger-ui.html",
+                        "/auth/signup",
+                        "/auth/login",
                         "/swagger-ui/**",
-                        "/swagger-resources/**",
                         "/v3/api-docs/**",
-                        "/webjars/**",
-                        "/actuator/health",
-                        "/error"
+                        "/actuator/**"
                 ).permitAll()
+                // ★ 관리자 전용 API
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                // 그 외는 로그인만 되어 있으면 접근 가능
                 .anyRequest().authenticated()
         );
 
-        // Basic / Form 로그인 비활성화 (우리는 JWT만 사용)
+        // 401 / 403 JSON 응답
+        http.exceptionHandling(ex -> ex
+                .authenticationEntryPoint(jsonAuthenticationEntryPoint)
+                .accessDeniedHandler(jsonAccessDeniedHandler)
+        );
+
+        // 익명 사용자 비활성화
+        http.anonymous(anonymous -> anonymous.disable());
+
+        // 기본 로그인 방식 비활성화
         http.httpBasic(AbstractHttpConfigurer::disable);
         http.formLogin(AbstractHttpConfigurer::disable);
 
@@ -68,7 +69,17 @@ public class SecurityConfig {
     }
 
     @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(jwtProvider);
+    }
+
+    @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) throws Exception {
         return cfg.getAuthenticationManager();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
