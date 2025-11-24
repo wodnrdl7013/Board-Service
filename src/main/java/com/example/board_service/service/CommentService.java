@@ -13,6 +13,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.access.AccessDeniedException;
+import com.example.board_service.user.User;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -135,13 +137,31 @@ public class CommentService {
         Comment target = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("댓글이 존재하지 않습니다. id=" + commentId));
 
-        List<Comment> allComments = commentRepository.findByPostIdOrderByCreatedAtAsc(target.getPost().getId());
+        // 🔥 JWT에서 현재 로그인 유저 가져오기
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        org.springframework.security.core.userdetails.User principal =
+                (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
+        String email = principal.getUsername();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("User not found: " + email));
+
+        // 🔒 작성자 체크
+        if (!target.getAuthor().equals(user.getNickname())) {
+            throw new AccessDeniedException("작성자만 댓글을 삭제할 수 있습니다.");
+        }
+
+        // 자식 댓글들 먼저 삭제 (네가 원래 쓰던 로직 유지)
+        List<Comment> allComments =
+                commentRepository.findByPostIdOrderByCreatedAtAsc(target.getPost().getId());
 
         List<Comment> children = allComments.stream()
-                .filter(c -> c.getParent() != null && Objects.equals(c.getParent().getId(), commentId))
+                .filter(c -> c.getParent() != null
+                        && Objects.equals(c.getParent().getId(), commentId))
                 .collect(Collectors.toList());
 
         commentRepository.deleteAll(children);
         commentRepository.delete(target);
     }
+
 }

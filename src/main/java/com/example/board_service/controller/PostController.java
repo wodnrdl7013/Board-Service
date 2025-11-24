@@ -4,6 +4,8 @@ import com.example.board_service.dto.CreatePostRequest;
 import com.example.board_service.dto.PageResponse;
 import com.example.board_service.dto.PostResponse;
 import com.example.board_service.dto.UpdatePostRequest;
+import com.example.board_service.like.PostLikeService;
+import com.example.board_service.dislike.PostDislikeService;
 import com.example.board_service.service.PostService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -12,15 +14,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
-
 @RestController
 @RequestMapping("/api/posts")
 public class PostController {
 
     private final PostService postService;
+    private final PostLikeService postLikeService;
+    private final PostDislikeService postDislikeService;
 
-    public PostController(PostService postService) {
+    public PostController(PostService postService,
+                          PostLikeService postLikeService,
+                          PostDislikeService postDislikeService) {
         this.postService = postService;
+        this.postLikeService = postLikeService;
+        this.postDislikeService = postDislikeService;
     }
 
     @PostMapping
@@ -45,12 +52,25 @@ public class PostController {
     }
 
     @PutMapping("/{id}")
-    public PostResponse update(@PathVariable Long id, @Valid @RequestBody UpdatePostRequest req) {
+    public PostResponse update(@PathVariable Long id,
+                               @Valid @RequestBody UpdatePostRequest req) {
         return postService.update(id, req);
     }
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         postService.delete(id);
+    }
+
+    // 👍 좋아요 토글
+    @PostMapping("/{id}/like")
+    public PostResponse toggleLike(@PathVariable Long id) {
+        return postLikeService.toggleLike(id);
+    }
+
+    // 👎 싫어요 토글
+    @PostMapping("/{id}/dislike")
+    public PostResponse toggleDislike(@PathVariable Long id) {
+        return postDislikeService.toggleDislike(id);
     }
 }
