@@ -48,6 +48,19 @@ public class User {
         this.updatedAt = LocalDateTime.now();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User)) return false;
+        User other = (User) o;
+        return id != null && id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
     // 편의 메서드
     public boolean isAdmin() {
         return roles != null && roles.contains("ROLE_ADMIN");
