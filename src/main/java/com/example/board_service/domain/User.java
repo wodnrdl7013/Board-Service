@@ -1,4 +1,4 @@
-package com.example.board_service.user;
+package com.example.board_service.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
