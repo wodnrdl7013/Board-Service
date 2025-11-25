@@ -6,15 +6,14 @@ import com.example.board_service.dto.comment.CommentResponse;
 import com.example.board_service.dto.comment.CreateCommentRequest;
 import com.example.board_service.repository.CommentRepository;
 import com.example.board_service.repository.PostRepository;
-import com.example.board_service.user.User;
-import com.example.board_service.user.UserRepository;
+import com.example.board_service.repository.UserRepository;
+import com.example.board_service.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.access.AccessDeniedException;
-import com.example.board_service.user.User;
 
 import java.util.*;
 import java.util.stream.Collectors;

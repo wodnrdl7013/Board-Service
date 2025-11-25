@@ -1,7 +1,7 @@
 package com.example.board_service.like;
 
 import com.example.board_service.domain.Post;
-import com.example.board_service.user.User;
+import com.example.board_service.domain.User;
 import jakarta.persistence.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;

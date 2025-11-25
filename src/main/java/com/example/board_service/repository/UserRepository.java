@@ -1,5 +1,6 @@
-package com.example.board_service.user;
+package com.example.board_service.repository;
 
+import com.example.board_service.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
