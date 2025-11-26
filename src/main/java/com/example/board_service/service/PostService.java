@@ -3,13 +3,16 @@ package com.example.board_service.service;
 import com.example.board_service.domain.Post;
 import com.example.board_service.domain.User;
 import com.example.board_service.domain.ViewHistory;
+import com.example.board_service.domain.UploadedFile;
 import com.example.board_service.dto.CreatePostRequest;
+import com.example.board_service.dto.FileResponse;
 import com.example.board_service.dto.PostResponse;
 import com.example.board_service.dto.UpdatePostRequest;
 import com.example.board_service.exception.NotFoundException;
 import com.example.board_service.repository.UserRepository;
 import com.example.board_service.repository.PostRepository;
 import com.example.board_service.repository.ViewHistoryRepository;
+import com.example.board_service.repository.UploadedFileRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
@@ -19,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -27,13 +31,16 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final ViewHistoryRepository viewHistoryRepository;
+    private final UploadedFileRepository uploadedFileRepository;
 
     public PostService(PostRepository postRepository,
                        UserRepository userRepository,
-                       ViewHistoryRepository viewHistoryRepository) {
+                       ViewHistoryRepository viewHistoryRepository,
+                       UploadedFileRepository uploadedFileRepository) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.viewHistoryRepository = viewHistoryRepository;
+        this.uploadedFileRepository = uploadedFileRepository;
     }
 
     /**
@@ -107,16 +114,29 @@ public class PostService {
             }
         }
 
-        return PostResponse.from(p);
+        // 📎 첨부 파일 조회
+        List<UploadedFile> files = uploadedFileRepository.findByPostIdOrderByUploadedAtAsc(id);
+        List<FileResponse> fileResponses = files.stream()
+                .map(FileResponse::from)
+                .toList();
+
+        return PostResponse.from(p, fileResponses);
     }
 
     public Page<PostResponse> list(String keyword, Pageable pageable) {
         Page<Post> page = (keyword == null || keyword.isBlank())
                 ? postRepository.findAll(pageable)
-                : postRepository.findByTitleContainingIgnoreCase(keyword, pageable);
+                : postRepository.findByTitleContainingIgnoreCaseOrContentContainingOrAuthorContainingIgnoreCase(
+                keyword, // titleKeyword
+                keyword, // contentKeyword
+                keyword, // authorKeyword
+                pageable
+        );
 
         return page.map(PostResponse::from);
     }
+
+
 
     // ✅ 작성자만 수정 가능
     @Transactional

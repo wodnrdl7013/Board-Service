@@ -44,12 +44,32 @@ public class PostController {
     public PageResponse<PostResponse> list(
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "latest") String sort // 🔥 정렬 옵션 추가
     ){
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        // 🔥 sort 파라미터에 따라 정렬 기준 결정
+        Sort sortOption;
+        switch (sort) {
+            case "views":
+                // 조회수 내림차순
+                sortOption = Sort.by(Sort.Direction.DESC, "viewCount");
+                break;
+            case "likes":
+                // 좋아요 내림차순
+                sortOption = Sort.by(Sort.Direction.DESC, "likeCount");
+                break;
+            case "latest":
+            default:
+                // 최신순 (id DESC - auto increment 가정)
+                sortOption = Sort.by(Sort.Direction.DESC, "id");
+                break;
+        }
+
+        Pageable pageable = PageRequest.of(page, size, sortOption);
         Page<PostResponse> res = postService.list(keyword, pageable);
         return PageResponse.of(res);
     }
+
 
     @PutMapping("/{id}")
     public PostResponse update(@PathVariable Long id,
