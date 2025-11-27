@@ -1,0 +1,8 @@
+# <type>: <subject>
+# ex) feat: 게시글 CRUD API 구현
+
+# body:
+# - 변경 이유/영향/주의사항
+
+# footer:
+# - Closes #이슈번호
