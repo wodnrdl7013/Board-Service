@@ -15,11 +15,9 @@ public class S3FileStorage implements FileStorage {
 
     private final S3Client s3Client;
 
-    @Value("${app.aws.s3.bucket}")
-    private String bucket;
-
-    @Value("${app.aws.s3.base-url}")
-    private String baseUrl;
+    // 👉 여기서 완전 하드코딩
+    private static final String BUCKET = "board-service-jaewook-files";
+    private static final String BASE_URL = "https://board-service-jaewook-files.s3.ap-northeast-2.amazonaws.com";
 
     public S3FileStorage(S3Client s3Client) {
         this.s3Client = s3Client;
@@ -38,7 +36,7 @@ public class S3FileStorage implements FileStorage {
 
         try {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .bucket(bucket)
+                    .bucket(BUCKET)
                     .key(key)
                     .contentType(file.getContentType())
                     // .acl(ObjectCannedACL.PUBLIC_READ)  // 버킷이 ACL 허용이면 사용 (지금은 생략)
@@ -53,6 +51,6 @@ public class S3FileStorage implements FileStorage {
         }
 
         // 버킷이 public 아니면 이 URL로 직접 열리진 않을 수 있지만, 경로 확인 용도로 쓴다.
-        return baseUrl + "/" + key;
+        return BASE_URL + "/" + key;
     }
 }

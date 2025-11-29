@@ -39,7 +39,15 @@ dependencies {
     // S3
     implementation "software.amazon.awssdk:s3:2.25.66"
 
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // 🔹 Flyway (MySQL 지원까지 같이)
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-mysql'
+
+    // ✅ Testcontainers 추가
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:mysql'
+    
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 

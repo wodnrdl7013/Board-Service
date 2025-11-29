@@ -10,13 +10,16 @@ import software.amazon.awssdk.services.s3.S3Client;
 @Configuration
 public class S3Config {
 
-    @Value("${app.aws.s3.region}")
-    private String region;
+    // 👉 지역만 하드코딩
+    private static final Region REGION = Region.AP_NORTHEAST_2;
 
     @Bean
     public S3Client s3Client() {
         return S3Client.builder()
-                .region(Region.of(region))
+                .region(REGION)
+                // 👉 자격증명은 AWS SDK가 알아서
+                //    - AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
+                //    - 또는 IAM Role
                 .credentialsProvider(DefaultCredentialsProvider.create())
                 .build();
     }
