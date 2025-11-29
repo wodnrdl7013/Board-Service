@@ -20,15 +20,14 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class CommentService {
 
-    private final UserRepository userRepository;
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
+    private final UserRepository userRepository;
 
     /**
-     * 루트 댓글 생성
+     * 댓글 생성 (루트 댓글)
      */
     @Transactional
     public CommentResponse createComment(Long postId, CreateCommentRequest request) {
@@ -39,10 +38,7 @@ public class CommentService {
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
 
-        org.springframework.security.core.userdetails.User principal =
-                (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
-
-        String email = principal.getUsername();
+        String email = (String) authentication.getPrincipal();
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalStateException("User not found: " + email));
@@ -62,13 +58,16 @@ public class CommentService {
      * 대댓글 생성
      */
     @Transactional
-    public CommentResponse createReply(Long postId, Long parentId, CreateCommentRequest request) {
+    public CommentResponse createReply(Long postId, Long parentCommentId, CreateCommentRequest request) {
+        // 게시글 확인
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. id=" + postId));
 
-        Comment parent = commentRepository.findById(parentId)
-                .orElseThrow(() -> new IllegalArgumentException("부모 댓글이 존재하지 않습니다. id=" + parentId));
+        // 부모 댓글 확인
+        Comment parent = commentRepository.findById(parentCommentId)
+                .orElseThrow(() -> new IllegalArgumentException("부모 댓글이 존재하지 않습니다. id=" + parentCommentId));
 
+        // 부모 댓글이 해당 게시글에 속하는지 검증
         if (!Objects.equals(parent.getPost().getId(), postId)) {
             throw new IllegalArgumentException("부모 댓글이 해당 게시글의 댓글이 아닙니다.");
         }
@@ -77,10 +76,7 @@ public class CommentService {
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
 
-        org.springframework.security.core.userdetails.User principal =
-                (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
-
-        String email = principal.getUsername();
+        String email = (String) authentication.getPrincipal();
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalStateException("User not found: " + email));
@@ -117,7 +113,7 @@ public class CommentService {
                 // 루트 댓글
                 roots.add(dto);
             } else {
-                // 부모 댓글의 children에 추가
+                // 자식 댓글 → 부모 DTO의 children에 추가
                 CommentResponse parentDto = dtoMap.get(comment.getParent().getId());
                 if (parentDto != null) {
                     parentDto.getChildren().add(dto);
@@ -138,10 +134,7 @@ public class CommentService {
 
         // 🔥 JWT에서 현재 로그인 유저 가져오기
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        org.springframework.security.core.userdetails.User principal =
-                (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
-        String email = principal.getUsername();
-
+        String email = (String) authentication.getPrincipal();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalStateException("User not found: " + email));
 
