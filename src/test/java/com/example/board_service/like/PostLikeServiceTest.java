@@ -5,25 +5,27 @@ import com.example.board_service.domain.User;
 import com.example.board_service.dto.PostResponse;
 import com.example.board_service.repository.PostRepository;
 import com.example.board_service.repository.UserRepository;
-import com.example.board_service.support.IntegrationTestSupport;
+import com.example.board_service.like.PostLikeRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.transaction.annotation.Transactional;
-import java.util.UUID;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
+@ActiveProfiles("test")   // 🔹 테스트용 H2 프로필 사용
 @Transactional
-class PostLikeServiceTest extends IntegrationTestSupport {
+class PostLikeServiceTest {
 
     @Autowired
     PostLikeService postLikeService;
@@ -40,6 +42,10 @@ class PostLikeServiceTest extends IntegrationTestSupport {
     @AfterEach
     void clearSecurityContext() {
         SecurityContextHolder.clearContext();
+        // 필요하면 DB 정리까지 하고 싶으면 아래 주석 풀어도 됨
+        // postLikeRepository.deleteAll();
+        // postRepository.deleteAll();
+        // userRepository.deleteAll();
     }
 
     /**
@@ -50,14 +56,13 @@ class PostLikeServiceTest extends IntegrationTestSupport {
     @Test
     void toggleLike_한번_누르면_좋아요_다시_누르면_취소() {
         // given
-
         String random = UUID.randomUUID().toString();
 
         User user = userRepository.save(
                 User.builder()
                         .email("like-" + random + "@example.com")
                         .password("encoded-password")
-                        .nickname("닉네임-" + random.substring(0, 8)) // 재순재 금지
+                        .nickname("닉네임-" + random.substring(0, 8))
                         .roles("ROLE_USER")
                         .build()
         );
