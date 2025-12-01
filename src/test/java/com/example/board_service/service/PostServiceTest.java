@@ -7,6 +7,7 @@ import com.example.board_service.domain.ViewHistory;
 import com.example.board_service.repository.PostRepository;
 import com.example.board_service.repository.UserRepository;
 import com.example.board_service.repository.ViewHistoryRepository;
+import com.example.board_service.support.IntegrationTestSupport;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ import java.util.UUID;
 
 @SpringBootTest
 @Transactional
-class PostServiceTest {
+class PostServiceTest extends IntegrationTestSupport {
 
     @Autowired
     PostService postService;

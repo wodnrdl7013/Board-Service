@@ -5,6 +5,7 @@ import com.example.board_service.domain.User;
 import com.example.board_service.dto.PostResponse;
 import com.example.board_service.repository.PostRepository;
 import com.example.board_service.repository.UserRepository;
+import com.example.board_service.support.IntegrationTestSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Transactional
-class PostLikeServiceTest {
+class PostLikeServiceTest extends IntegrationTestSupport {
 
     @Autowired
     PostLikeService postLikeService;
