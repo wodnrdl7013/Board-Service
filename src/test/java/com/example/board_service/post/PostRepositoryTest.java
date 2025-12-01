@@ -2,14 +2,17 @@ package com.example.board_service.post;
 
 import com.example.board_service.domain.Post;
 import com.example.board_service.repository.PostRepository;
-import com.example.board_service.support.IntegrationTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class PostRepositoryTest extends IntegrationTestSupport {
+@DataJpaTest
+@ActiveProfiles("test")
+class PostRepositoryTest {
 
     @Autowired
     private PostRepository postRepository;
@@ -37,7 +40,6 @@ class PostRepositoryTest extends IntegrationTestSupport {
         assertThat(found.getContent()).isEqualTo("테스트 내용");
         assertThat(found.getAuthor()).isEqualTo("재욱");
 
-        // viewCount / likeCount / dislikeCount 기본값도 같이 확인해볼 수 있음
         assertThat(found.getViewCount()).isZero();
         assertThat(found.getLikeCount()).isZero();
         assertThat(found.getDislikeCount()).isZero();
