@@ -72,63 +72,46 @@ posts/{postId}/{UUID}.ext
 
 # 🏛 아키텍처 구조
 
-# 🏛 아키텍처 구조
-
 ```mermaid
 flowchart LR
-    Dev[Developer<br/>로컬 개발환경] -->|git push| GitHub
+    Dev[Developer (Local)] -->|git push| GitHub[GitHub Repository]
 
-    GitHub -->|Webhook| Actions[GitHub Actions<br/>CI/CD 파이프라인]
+    GitHub -->|Webhook| Actions[GitHub Actions CI/CD]
 
     subgraph CI[CI 단계]
-        Actions -->|./gradlew test & bootJar| Build[Build<br/>Gradle]
+        Actions -->|./gradlew test & bootJar| Build[Gradle Build]
+        Build -->|docker build & push| DockerHub[(Docker Hub\nboard-service:latest)]
     end
-
-    Build -->|docker build & push| DockerHub[(Docker Hub<br/>jaesoon0605/board-service:latest)]
 
     subgraph CD[CD 단계]
-        Actions -->|SSH (appleboy/ssh-action)| EC2[AWS EC2<br/>Amazon Linux]
-        EC2 -->|docker compose pull & up -d| Containers[컨테이너 실행<br/>board-service-app & board-mysql]
+        Actions -->|SSH deploy| EC2[AWS EC2\nAmazon Linux]
+        EC2 -->|docker compose pull & up -d| Containers[board-service-app\nboard-mysql]
     end
 
-    Client[클라이언트<br/>Browser / API Client] -->|HTTP 8080| App[(board-service-app<br/>Spring Boot)]
-    App -->|JPA| MySQL[(board-mysql<br/>MySQL 8.0)]
-    App -->|S3 SDK| S3[(AWS S3<br/>파일 업로드)]
+    Client[Client] -->|HTTP 8080| App[(board-service-app\nSpring Boot)]
+    App -->|JPA| MySQL[(MySQL 8.0)]
+    App -->|S3 SDK| S3[(AWS S3)]
 ```
+
 ```mermaid
 flowchart TD
-    Client[Client<br/>Swagger / REST Client] --> Controller[Controller<br/>@RestController]
+    Client[Client] --> Controller[Controller\n@RestController]
 
-    Controller --> Service[Service<br/>비즈니스 로직]
-    Service --> Repository[Repository<br/>Spring Data JPA]
+    Controller --> Service[Service\n비즈니스 로직]
+    Service --> Repository[Repository\nSpring Data JPA]
     Repository --> Entity[JPA Entity]
     Entity --> DB[(MySQL 8.0)]
 
-    Service --> FileStorage[FileStorage / S3FileStorage]
-    FileStorage --> S3[(AWS S3<br/>파일 저장)]
+    Service --> FileStorage[FileStorage\nS3FileStorage]
+    FileStorage --> S3[(AWS S3\n파일 저장)]
 
-    Service --> Security[Spring Security<br/>JWT Filter]
-    Security --> UserDetails[UserDetailsService<br/>JwtProvider]
-```
-
-AWS 기반 운영 아키텍처:
-
-```
-Developer → GitHub → GitHub Actions (CI/CD)
-                ↓ build & test
-                ↓ docker build & push
-        Docker Hub (latest)
-                ↓ pull
-        AWS EC2 + Docker Compose
-                ↓
-         board-service-app
-         board-mysql
+    Service --> Security[Spring Security\nJWT Filter]
+    Security --> UserDetails[UserDetailsService\nJwtProvider]
 ```
 
 ---
 
 # 🗂 프로젝트 구조
-
 ```
 src/main/java/com/example/board_service
  ├── auth
@@ -175,22 +158,25 @@ src/main/java/com/example/board_service
 
 ```mermaid
 erDiagram
-    USER ||--o{ POST : "writes"
-    USER ||--o{ COMMENT : "writes"
-    USER ||--o{ POST_LIKE : "likes"
-    USER ||--o{ POST_DISLIKE : "dislikes"
-    USER ||--o{ VIEW_HISTORY : "views"
-    POST ||--o{ COMMENT : "has"
-    POST ||--o{ UPLOADED_FILE : "has"
-    POST ||--o{ POST_LIKE : "has"
-    POST ||--o{ POST_DISLIKE : "has"
-    POST ||--o{ VIEW_HISTORY : "has"
+    USER ||--o{ POST : writes
+    USER ||--o{ COMMENT : writes
+    USER ||--o{ POST_LIKE : likes
+    USER ||--o{ POST_DISLIKE : dislikes
+    USER ||--o{ VIEW_HISTORY : views
+
+    POST ||--o{ COMMENT : has
+    POST ||--o{ UPLOADED_FILE : has
+    POST ||--o{ POST_LIKE : has
+    POST ||--o{ POST_DISLIKE : has
+    POST ||--o{ VIEW_HISTORY : has
+
     USER {
         BIGINT id
         VARCHAR email
         VARCHAR password
         VARCHAR nickname
     }
+
     POST {
         BIGINT id
         VARCHAR title
@@ -202,6 +188,7 @@ erDiagram
         DATETIME createdAt
         DATETIME updatedAt
     }
+
     COMMENT {
         BIGINT id
         TEXT content
@@ -210,6 +197,7 @@ erDiagram
         INT depth
         DATETIME createdAt
     }
+
     UPLOADED_FILE {
         BIGINT id
         VARCHAR originalName
@@ -218,17 +206,20 @@ erDiagram
         VARCHAR contentType
         BIGINT postId
     }
+
     VIEW_HISTORY {
         BIGINT id
         BIGINT userId
         BIGINT postId
         DATETIME viewedAt
     }
+
     POST_LIKE {
         BIGINT id
         BIGINT userId
         BIGINT postId
     }
+
     POST_DISLIKE {
         BIGINT id
         BIGINT userId
@@ -239,7 +230,6 @@ erDiagram
 ---
 
 # 📚 API 문서 (Swagger)
-
 ```
 http://localhost:8080/swagger-ui/index.html
 ```
@@ -277,7 +267,6 @@ POST /api/posts/{postId}/files
 ---
 
 # ❗ 예외 처리 (GlobalExceptionHandler)
-
 ```json
 {
   "timestamp": "2024-01-01T12:00:00",
@@ -313,7 +302,6 @@ docker compose -f docker-compose.yml up -d
 - `.github/workflows/deploy.yml`
 - Docker 이미지 빌드 → Docker Hub 푸시  
 - EC2 SSH 접속 후 자동 배포:
-
 ```bash
 git pull origin main
 docker compose -f docker-compose-prod.yml pull
