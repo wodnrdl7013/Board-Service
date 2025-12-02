@@ -72,16 +72,43 @@ posts/{postId}/{UUID}.ext
 
 # 🏛 아키텍처 구조
 
+# 🏛 아키텍처 구조
+
+```mermaid
+flowchart LR
+    Dev[Developer<br/>로컬 개발환경] -->|git push| GitHub
+
+    GitHub -->|Webhook| Actions[GitHub Actions<br/>CI/CD 파이프라인]
+
+    subgraph CI[CI 단계]
+        Actions -->|./gradlew test & bootJar| Build[Build<br/>Gradle]
+    end
+
+    Build -->|docker build & push| DockerHub[(Docker Hub<br/>jaesoon0605/board-service:latest)]
+
+    subgraph CD[CD 단계]
+        Actions -->|SSH (appleboy/ssh-action)| EC2[AWS EC2<br/>Amazon Linux]
+        EC2 -->|docker compose pull & up -d| Containers[컨테이너 실행<br/>board-service-app & board-mysql]
+    end
+
+    Client[클라이언트<br/>Browser / API Client] -->|HTTP 8080| App[(board-service-app<br/>Spring Boot)]
+    App -->|JPA| MySQL[(board-mysql<br/>MySQL 8.0)]
+    App -->|S3 SDK| S3[(AWS S3<br/>파일 업로드)]
 ```
-Controller
-    ↓
-Service
-    ↓
-Repository (Spring Data JPA)
-    ↓
-JPA Entity
-    ↓
-MySQL (Docker)
+```mermaid
+flowchart TD
+    Client[Client<br/>Swagger / REST Client] --> Controller[Controller<br/>@RestController]
+
+    Controller --> Service[Service<br/>비즈니스 로직]
+    Service --> Repository[Repository<br/>Spring Data JPA]
+    Repository --> Entity[JPA Entity]
+    Entity --> DB[(MySQL 8.0)]
+
+    Service --> FileStorage[FileStorage / S3FileStorage]
+    FileStorage --> S3[(AWS S3<br/>파일 저장)]
+
+    Service --> Security[Spring Security<br/>JWT Filter]
+    Security --> UserDetails[UserDetailsService<br/>JwtProvider]
 ```
 
 AWS 기반 운영 아키텍처:
@@ -146,14 +173,67 @@ src/main/java/com/example/board_service
 
 # 🗄 ERD 구조
 
-```
-User(id, email, password, nickname)
-Post(id, title, content, author, viewCount, likeCount, dislikeCount)
-Comment(id, content, parentId, postId, depth)
-UploadedFile(id, originalName, url, size, contentType, postId)
-ViewHistory(userId, postId, viewedAt)
-PostLike(userId, postId)
-PostDislike(userId, postId)
+```mermaid
+erDiagram
+    USER ||--o{ POST : "writes"
+    USER ||--o{ COMMENT : "writes"
+    USER ||--o{ POST_LIKE : "likes"
+    USER ||--o{ POST_DISLIKE : "dislikes"
+    USER ||--o{ VIEW_HISTORY : "views"
+    POST ||--o{ COMMENT : "has"
+    POST ||--o{ UPLOADED_FILE : "has"
+    POST ||--o{ POST_LIKE : "has"
+    POST ||--o{ POST_DISLIKE : "has"
+    POST ||--o{ VIEW_HISTORY : "has"
+    USER {
+        BIGINT id
+        VARCHAR email
+        VARCHAR password
+        VARCHAR nickname
+    }
+    POST {
+        BIGINT id
+        VARCHAR title
+        TEXT content
+        VARCHAR author
+        INT viewCount
+        INT likeCount
+        INT dislikeCount
+        DATETIME createdAt
+        DATETIME updatedAt
+    }
+    COMMENT {
+        BIGINT id
+        TEXT content
+        BIGINT parentId
+        BIGINT postId
+        INT depth
+        DATETIME createdAt
+    }
+    UPLOADED_FILE {
+        BIGINT id
+        VARCHAR originalName
+        VARCHAR url
+        BIGINT size
+        VARCHAR contentType
+        BIGINT postId
+    }
+    VIEW_HISTORY {
+        BIGINT id
+        BIGINT userId
+        BIGINT postId
+        DATETIME viewedAt
+    }
+    POST_LIKE {
+        BIGINT id
+        BIGINT userId
+        BIGINT postId
+    }
+    POST_DISLIKE {
+        BIGINT id
+        BIGINT userId
+        BIGINT postId
+    }
 ```
 
 ---
