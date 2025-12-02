@@ -74,39 +74,38 @@ posts/{postId}/{UUID}.ext
 
 ```mermaid
 flowchart LR
-    Dev[Developer (Local)] -->|git push| GitHub[GitHub Repository]
+    Dev[Dev] -->|push| GitHub[GitHub]
 
-    GitHub -->|Webhook| Actions[GitHub Actions CI/CD]
+    GitHub -->|Webhook| Actions[Actions]
 
-    subgraph CI[CI 단계]
-        Actions -->|./gradlew test & bootJar| Build[Gradle Build]
-        Build -->|docker build & push| DockerHub[(Docker Hub\nboard-service:latest)]
+    subgraph CI[CI]
+        Actions -->|test & build| Build[Gradle]
+        Build -->|docker push| DockerHub[Docker Hub]
     end
 
-    subgraph CD[CD 단계]
-        Actions -->|SSH deploy| EC2[AWS EC2\nAmazon Linux]
-        EC2 -->|docker compose pull & up -d| Containers[board-service-app\nboard-mysql]
+    subgraph CD[CD]
+        Actions -->|SSH deploy| EC2[EC2]
+        EC2 -->|compose up| Containers[App + MySQL]
     end
 
-    Client[Client] -->|HTTP 8080| App[(board-service-app\nSpring Boot)]
-    App -->|JPA| MySQL[(MySQL 8.0)]
-    App -->|S3 SDK| S3[(AWS S3)]
+    Client[Client] -->|8080| App[(Spring Boot)]
+    App --> MySQL[(MySQL)]
+    App --> S3[(S3)]
 ```
 
 ```mermaid
 flowchart TD
-    Client[Client] --> Controller[Controller\n@RestController]
+    Client --> Controller[Controller]
+    Controller --> Service[Service]
+    Service --> Repository[Repository]
+    Repository --> Entity[Entity]
+    Entity --> DB[(MySQL)]
 
-    Controller --> Service[Service\n비즈니스 로직]
-    Service --> Repository[Repository\nSpring Data JPA]
-    Repository --> Entity[JPA Entity]
-    Entity --> DB[(MySQL 8.0)]
+    Service --> FileStorage[FileStorage]
+    FileStorage --> S3[(S3)]
 
-    Service --> FileStorage[FileStorage\nS3FileStorage]
-    FileStorage --> S3[(AWS S3\n파일 저장)]
-
-    Service --> Security[Spring Security\nJWT Filter]
-    Security --> UserDetails[UserDetailsService\nJwtProvider]
+    Service --> Security[Security]
+    Security --> UserDetails[UserDetails]
 ```
 
 ---
