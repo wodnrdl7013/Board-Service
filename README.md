@@ -1,10 +1,12 @@
-# 📘 Board-Service (Spring Boot 게시판 서비스)
+# 📘 Board-Service (Spring Boot 게시판 서비스)  
+**JWT 인증 · 댓글/대댓글 · 좋아요/싫어요 · 조회수 중복 방지 · S3 파일 업로드 · CI/CD 자동 배포**
 
-Spring Boot 기반으로 개발한 **JWT 인증 게시판 서비스**입니다.  
+Spring Boot 기반으로 개발한 **JWT 인증 게시판 백엔드 서비스**입니다.  
 게시글 CRUD, 댓글/대댓글, 좋아요/싫어요, 조회수 중복 방지, AWS S3 파일 업로드 등  
-**실무에서 바로 사용할 수 있는 기능들**을 담은 백엔드 프로젝트입니다.
+**실무 수준 기능**을 포함하고 있으며,  
+GitHub Actions + Docker Hub + AWS EC2 기반 **완전 자동 CI/CD 배포 파이프라인**까지 구축했습니다.
 
-본 프로젝트는 **신입 백엔드 개발자 포트폴리오 기준 완성도 높은 아키텍처**를 목표로 제작되었습니다.
+본 프로젝트는 **신입 백엔드 포트폴리오 기준 업계 상용 수준**을 목표로 제작되었습니다.
 
 ---
 
@@ -12,94 +14,109 @@ Spring Boot 기반으로 개발한 **JWT 인증 게시판 서비스**입니다.
 
 ## 🔐 인증/인가 (Spring Security + JWT)
 - 회원가입 / 로그인
-- JWT 발급 & 인증 필터 적용
-- 인증된 사용자만 게시글 작성/수정/삭제 가능
-- SecurityContext에서 principal(email) 기반 권한 인증
+- JWT 발급 & 인증 / 인가 필터 적용
+- 인증된 사용자만 게시글/댓글 작성 가능
+- SecurityContext 기반 권한 처리
 
 ---
 
 ## 📝 게시글 기능
 - 게시글 생성 / 조회 / 수정 / 삭제
-- **제목 / 내용 / 작성자 통합 검색**
-- **정렬 기능**
-  - 최신순
-  - 조회수순
-  - 좋아요순
-- **JPA Auditing** 자동 생성 시간/수정 시간 관리
-- **조회수 중복 방지**
-  - 동일 사용자 기준 날짜별 1회만 증가
+- **제목·내용·작성자 통합 검색**
+- 정렬: 최신순 / 조회수 / 좋아요수
+- **JPA Auditing**(생성일·수정일 자동 관리)
+- **사용자별 조회수 1일 1회 증가**
 
 ---
 
 ## 💬 댓글/대댓글 기능
-- 댓글 작성 / 조회 / 삭제
-- 대댓글(depth 1) 구조 지원
-- 게시글별 댓글 트리 응답
-- 게시글 삭제 시 댓글 cascade 적용
+- 댓글 작성 / 대댓글 작성 / 삭제
+- depth=1 대댓글 구조
+- 게시글 삭제 시 댓글 cascade 삭제
+- 트리 구조 응답 제공
 
 ---
 
 ## 👍 좋아요 / 싫어요
-- 좋아요 / 싫어요 **토글 방식**
-- 다시 누르면 취소됨
-- likeCount / dislikeCount 실시간 반영
-- PostLike 테이블 기반 중복 방지
+- 토글 방식 (누르면 +1 / 다시 누르면 취소)
+- PostLike, PostDislike 테이블 기반 중복 방지
+- 실시간 likeCount / dislikeCount 업데이트
 
 ---
 
 ## 📁 파일 업로드 (AWS S3)
 - 게시글별 첨부파일 업로드
-- 업로드된 파일 S3 저장 후 URL 반환
-- S3 경로 구조  
+- S3 저장 후 public URL 반환
+- 파일 경로 규칙:
 ```
-posts/{postId}/{UUID}.확장자
+posts/{postId}/{UUID}.ext
 ```
-- UploadedFile 엔티티에 메타정보 저장
-  - originalName  
-  - url  
-  - size  
-  - contentType  
-  - uploadedAt  
+- 메타데이터 DB 저장  
+  (url, originalName, size, contentType 등)
 
 ---
 
-## 🔎 검색/정렬 기능
-- keyword 기반 통합 검색
-- 최신순 / 조회수순 / 좋아요순 정렬 지원
+# 🔎 검색/정렬 기능
+- keyword로 통합 검색 (title/content/author)
+- 최신순 / 조회수 / 좋아요순 정렬 가능
 
 ---
 
-## 🧪 테스트
-- **좋아요 토글 테스트**
-- **통합 검색 테스트**
-- **조회수 중복 방지 테스트**(일부 작성)
-- SpringBootTest + @Transactional 기반
+# 🧪 테스트
+- **PostLikeServiceTest**  
+- **PostRepositoryTest**  
+- **조회수 중복 방지 테스트**
+- 통합 테스트: SpringBootTest + H2 test profile
 
 ---
 
 # 🏛 아키텍처 구조
-클린 아키텍처 기반의 표준 Spring MVC 구조
 
 ```
-Controller → Service → Repository → JPA Entity → MySQL
+Controller
+    ↓
+Service
+    ↓
+Repository (Spring Data JPA)
+    ↓
+JPA Entity
+    ↓
+MySQL (Docker)
+```
+
+AWS 기반 운영 아키텍처:
+
+```
+Developer → GitHub → GitHub Actions (CI/CD)
+                ↓ build & test
+                ↓ docker build & push
+        Docker Hub (latest)
+                ↓ pull
+        AWS EC2 + Docker Compose
+                ↓
+         board-service-app
+         board-mysql
 ```
 
 ---
 
 # 🗂 프로젝트 구조
+
 ```
 src/main/java/com/example/board_service
+ ├── auth
+ ├── comment
+ ├── config
  ├── controller
- ├── service
- ├── repository
+ ├── dislike
  ├── domain
  ├── dto
- ├── config
- ├── security
- ├── like
- ├── comment
+ ├── exception
  ├── file
- └── exception
+ ├── like
+ ├── repository
+ ├── security
+ └── service
 ```
 
 ---
@@ -112,64 +129,40 @@ src/main/java/com/example/board_service
 - Spring Security  
 - Spring Data JPA  
 - MySQL 8  
-- JWT (io.jsonwebtoken)  
+- JWT  
 - AWS S3 SDK  
 
 ### DevOps
 - Docker / Docker Compose  
-- Adminer  
-- AWS EC2 배포 고려 구조  
-- GitHub Actions(CI) 적용 가능 구조  
+- AWS EC2  
+- GitHub Actions (CI + CD)  
+- Docker Hub Registry  
 
 ### Tools
-- IntelliJ  
-- GitHub  
+- IntelliJ IDEA  
+- GitHub / Git  
 
 ---
 
-# 🗄 ERD
+# 🗄 ERD 구조
 
-### 📌 User
-- id  
-- email  
-- password  
-- nickname  
-
-### 📌 Post
-- id  
-- title  
-- content  
-- author  
-- viewCount  
-- likeCount  
-- dislikeCount  
-
-### 📌 Comment
-- id  
-- content  
-- author  
-- parentId  
-- postId  
-
-### 📌 UploadedFile
-- id  
-- originalName  
-- url  
-- size  
-- contentType  
-- postId  
-
-### 📌 ViewHistory
-- userId  
-- postId  
-- viewedAt  
+```
+User(id, email, password, nickname)
+Post(id, title, content, author, viewCount, likeCount, dislikeCount)
+Comment(id, content, parentId, postId, depth)
+UploadedFile(id, originalName, url, size, contentType, postId)
+ViewHistory(userId, postId, viewedAt)
+PostLike(userId, postId)
+PostDislike(userId, postId)
+```
 
 ---
 
-# 📚 API 문서
-Swagger UI에서 전체 API 확인 가능  
+# 📚 API 문서 (Swagger)
 
-➡ http://localhost:8080/swagger-ui/index.html
+```
+http://localhost:8080/swagger-ui/index.html
+```
 
 ---
 
@@ -191,9 +184,9 @@ DELETE /api/posts/{id}
 
 ### 🔎 Search & Sort
 ```
-GET /api/posts?keyword=재순&sort=latest
-GET /api/posts?keyword=테스트&sort=views
-GET /api/posts?keyword=치이카와&sort=likes
+GET /api/posts?keyword=java&sort=latest
+GET /api/posts?keyword=강의&sort=views
+GET /api/posts?keyword=백엔드&sort=likes
 ```
 
 ### 📁 File Upload
@@ -203,11 +196,11 @@ POST /api/posts/{postId}/files
 
 ---
 
-# 🧪 예외 처리(GlobalExceptionHandler)
-모든 오류는 다음 형태로 응답:
-```
+# ❗ 예외 처리 (GlobalExceptionHandler)
+
+```json
 {
-  "timestamp": "...",
+  "timestamp": "2024-01-01T12:00:00",
   "status": 404,
   "error": "Not Found",
   "message": "게시글을 찾을 수 없습니다."
@@ -218,9 +211,9 @@ POST /api/posts/{postId}/files
 
 # 🔧 실행 방법
 
-### 1) Docker MySQL 실행
+### 1) Docker Compose 실행
 ```
-docker compose up -d
+docker compose -f docker-compose.yml up -d
 ```
 
 ### 2) Spring Boot 실행
@@ -228,16 +221,25 @@ docker compose up -d
 ./gradlew bootRun
 ```
 
-### 3) Swagger 접속
-```
-http://localhost:8080/swagger-ui/index.html
-```
-
 ---
 
-# 🚀 배포 (예정)
-- AWS EC2 + Docker 기반 배포 구조
-- GitHub Actions CI/CD 적용 가능
+# 🚀 CI/CD (GitHub Actions + Docker Hub + AWS EC2)
+
+## 🔵 CI
+- `.github/workflows/ci.yml`
+- 테스트(H2 test) + 빌드 자동화
+
+## 🟢 CD
+- `.github/workflows/deploy.yml`
+- Docker 이미지 빌드 → Docker Hub 푸시  
+- EC2 SSH 접속 후 자동 배포:
+
+```bash
+git pull origin main
+docker compose -f docker-compose-prod.yml pull
+docker compose -f docker-compose-prod.yml up -d
+docker image prune -f
+```
 
 ---
 
@@ -252,18 +254,17 @@ http://localhost:8080/swagger-ui/index.html
 | 조회수 중복 방지 | ✅ |
 | 파일 업로드(S3) | ✅ |
 | 검색/정렬 | ✅ |
-| Swagger | ✅ |
+| 테스트 코드 | 🔶 |
 | Docker | ✅ |
-| 테스트 코드 | 🔶 일부 완료 |
+| GitHub Actions CI | ✅ |
+| GitHub Actions CD | ✅ |
+| AWS EC2 배포 | ✅ |
 
 ---
 
-# 🙋‍♂️ 개발자
+# 👨‍💻 개발자
+**이재욱 (Backend Developer)**
 
-**이재욱 (Backend Developer)**  
-- Java · Spring Boot 기반 백엔드 개발자  
-- AWS · Docker · DevOps 관심  
-- 게임 개발/프레임워크 개발 병행  
-
----
-
+- Java/Spring Backend  
+- Docker · AWS · DevOps  
+- Unity 게임 개발 경험
