@@ -1,0 +1,70 @@
+name: Deploy to EC2
+
+on:
+  # 처음엔 수동 실행으로 테스트
+  workflow_dispatch:
+  # 안정화되면 아래 주석 풀고 main에 push될 때 자동 배포로 전환
+  # push:
+  #   branches: [ "main" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Grant execute permission for Gradle wrapper
+        run: chmod +x ./gradlew
+
+      - name: Build bootJar
+        run: ./gradlew clean bootJar
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/board-service:latest \
+            .
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/board-service:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ${{ secrets.EC2_PROJECT_DIR }}
+
+            # 1) 최신 코드 받기 (docker-compose-prod.yml 변경 사항 반영)
+            git pull origin main
+
+            # 2) 도커허브에서 최신 이미지 받아오기
+            docker compose -f docker-compose-prod.yml pull
+
+            # 3) 컨테이너 재시작 (없으면 생성)
+            docker compose -f docker-compose-prod.yml up -d
+
+            # 4) 안 쓰는 이미지 정리
+            docker image prune -f

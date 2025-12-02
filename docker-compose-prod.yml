@@ -1,42 +1,40 @@
-version: "3.8"
+  version: "3.8"
 
-services:
-  board-mysql:
-    image: mysql:8.0
-    container_name: board-mysql
-    restart: always
-    env_file:
-      - .env.prod            # ✅ 여기서 MYSQL_ROOT_PASSWORD, MYSQL_DATABASE 읽음
-    environment:
-      MYSQL_ROOT_HOST: "%"
-      TZ: Asia/Seoul
-    ports:
-      - "3306:3306"          # 필요 없으면 나중에 주석 처리해도 됨 (외부 DB 접속 막고 싶으면)
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-    volumes:
-      - board-mysql-data:/var/lib/mysql
-    mem_limit: 512m          # ✅ 메모리 제한 유지
-    cpus: 0.5                # ✅ CPU 제한 유지
+  services:
+    board-mysql:
+      image: mysql:8.0
+      container_name: board-mysql
+      restart: always
+      env_file:
+        - .env.prod            # ✅ 여기서 MYSQL_ROOT_PASSWORD, MYSQL_DATABASE 읽음
+      environment:
+        MYSQL_ROOT_HOST: "%"
+        TZ: Asia/Seoul
+      ports:
+        - "3306:3306"          # 필요 없으면 나중에 주석 처리해도 됨 (외부 DB 접속 막고 싶으면)
+      command:
+        - --character-set-server=utf8mb4
+        - --collation-server=utf8mb4_unicode_ci
+      volumes:
+        - board-mysql-data:/var/lib/mysql
+      mem_limit: 512m          # ✅ 메모리 제한 유지
+      cpus: 0.5                # ✅ CPU 제한 유지
 
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: board-service-app
-    depends_on:
-      - board-mysql
-    ports:
-      - "8080:8080"
-    env_file:
-      - .env.prod            # ✅ 동일한 파일 사용 (DB/JWT/S3 등 모두 여기서)
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m"   # ✅ JVM 힙 메모리 제한
-    restart: unless-stopped   # ✅ 서버는 죽으면 자동 재시작, 개발 중엔 바꿔도 됨
-    mem_limit: 512m
-    cpus: 0.5
+    app:
+      image: jaesoon0605/board-service:latest
+      container_name: board-service-app
+      depends_on:
+        - board-mysql
+      ports:
+        - "8080:8080"
+      env_file:
+        - .env.prod            # ✅ 동일한 파일 사용 (DB/JWT/S3 등 모두 여기서)
+      environment:
+        SPRING_PROFILES_ACTIVE: prod
+        JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m"   # ✅ JVM 힙 메모리 제한
+      restart: unless-stopped   # ✅ 서버는 죽으면 자동 재시작, 개발 중엔 바꿔도 됨
+      mem_limit: 512m
+      cpus: 0.5
 
-volumes:
-  board-mysql-data:
+  volumes:
+    board-mysql-data:
